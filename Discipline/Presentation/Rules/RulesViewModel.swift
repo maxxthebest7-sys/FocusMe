@@ -1,6 +1,7 @@
 import Foundation
 import Combine
 
+@MainActor
 final class RulesViewModel: ObservableObject {
     @Published var rules:       [Rule] = []
     @Published var showAddRule: Bool   = false
@@ -46,14 +47,12 @@ final class RulesViewModel: ObservableObject {
 
     func toggle(_ rule: Rule) {
         ruleUseCases.toggleEnabled(rule)
+        // rule.isEnabled is the pre-toggle state; if it was enabled (now disabling), cancel.
         if rule.isEnabled {
             notificationManager.cancelScheduledNotifications(for: rule)
-        } else {
-            // rule.isEnabled was true before toggle — now disabled, so cancel
-            // (toggled state not yet reloaded; handled above).
         }
         reload()
-        // Re-schedule if newly enabled.
+        // If the rule is now enabled after toggle, schedule it.
         if let updated = rules.first(where: { $0.id == rule.id }), updated.isEnabled {
             scheduleIfNeeded(updated)
         }
@@ -61,6 +60,10 @@ final class RulesViewModel: ObservableObject {
 
     private func scheduleIfNeeded(_ rule: Rule) {
         guard rule.isEnabled, case .timeBased(let trigger) = rule.triggerType else { return }
-        notificationManager.scheduleTimeBasedRule(rule, trigger: trigger)
+        let templates = DependencyContainer.shared.templateUseCases.fetchAll()
+        let template  = templates
+            .filter { $0.assignedRuleIds.contains(rule.id) || $0.isGlobal }
+            .randomElement()
+        notificationManager.scheduleTimeBasedRule(rule, trigger: trigger, template: template)
     }
 }

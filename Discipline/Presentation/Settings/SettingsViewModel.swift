@@ -1,12 +1,12 @@
 import Foundation
 import Combine
 
+@MainActor
 final class SettingsViewModel: ObservableObject {
     @Published var cooldownMinutes: Int
 
     private let ruleRepository:     RuleRepository
     private let templateRepository: TemplateRepository
-    private let cooldownKey = "discipline.settings.cooldown"
 
     init(
         ruleRepository:     RuleRepository     = DependencyContainer.shared.ruleRepository,
@@ -14,12 +14,12 @@ final class SettingsViewModel: ObservableObject {
     ) {
         self.ruleRepository     = ruleRepository
         self.templateRepository = templateRepository
-        let saved               = UserDefaults.standard.integer(forKey: "discipline.settings.cooldown")
+        let saved               = UserDefaults.standard.integer(forKey: StorageKeys.cooldown)
         self.cooldownMinutes    = saved == 0 ? 10 : saved
     }
 
     func saveCooldown() {
-        UserDefaults.standard.set(cooldownMinutes, forKey: cooldownKey)
+        UserDefaults.standard.set(cooldownMinutes, forKey: StorageKeys.cooldown)
     }
 
     // MARK: - Export / Import
@@ -34,7 +34,8 @@ final class SettingsViewModel: ObservableObject {
             let data  = json.data(using: .utf8),
             let rules = try? JSONDecoder().decode([Rule].self, from: data)
         else { return }
-        rules.forEach { ruleRepository.save($0) }
+        let existing = Set(ruleRepository.fetchAll().map(\.id))
+        rules.filter { !existing.contains($0.id) }.forEach { ruleRepository.save($0) }
     }
 
     func exportTemplatesJSON() -> String? {

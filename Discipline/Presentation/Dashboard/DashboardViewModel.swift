@@ -1,15 +1,22 @@
 import Foundation
 import Combine
 
+@MainActor
 final class DashboardViewModel: ObservableObject {
-    @Published var rules:       [Rule]          = []
-    @Published var schedule:    Schedule        = Schedule()
-    @Published var activeBlock: ScheduleBlock?  = nil
-    @Published var currentTime: String          = ""
+    @Published var rules:       [Rule]         = []
+    @Published var schedule:    Schedule       = Schedule()
+    @Published var activeBlock: ScheduleBlock? = nil
+    @Published var currentTime: String         = ""
 
     private let ruleUseCases:     RuleUseCases
     private let scheduleUseCases: ScheduleUseCases
     private var clockTimer:       Timer?
+
+    private lazy var timeFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.timeStyle = .short
+        return f
+    }()
 
     init(
         ruleUseCases:     RuleUseCases     = DependencyContainer.shared.ruleUseCases,
@@ -22,7 +29,6 @@ final class DashboardViewModel: ObservableObject {
     func onAppear() {
         reload()
         startClock()
-        // Listen for snooze requests originating from notification actions.
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleSnoozeRequest(_:)),
@@ -48,20 +54,16 @@ final class DashboardViewModel: ObservableObject {
         reload()
     }
 
-    // MARK: - Private
-
     private func startClock() {
         updateClock()
         clockTimer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
-            self?.updateClock()
+            Task { @MainActor in self?.updateClock() }
         }
     }
 
     private func updateClock() {
-        let fmt        = DateFormatter()
-        fmt.timeStyle  = .short
-        currentTime    = fmt.string(from: Date())
-        activeBlock    = scheduleUseCases.activeBlockNow(in: schedule)
+        currentTime = timeFormatter.string(from: Date())
+        activeBlock = scheduleUseCases.activeBlockNow(in: schedule)
     }
 
     @objc private func handleSnoozeRequest(_ note: Notification) {

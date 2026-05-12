@@ -1,9 +1,10 @@
 import Foundation
 import Combine
 
+@MainActor
 final class TemplatesViewModel: ObservableObject {
-    @Published var templates:        [NotificationTemplate] = []
-    @Published var showAddTemplate:  Bool                   = false
+    @Published var templates:       [NotificationTemplate] = []
+    @Published var showAddTemplate: Bool                   = false
 
     private let templateUseCases: TemplateUseCases
 

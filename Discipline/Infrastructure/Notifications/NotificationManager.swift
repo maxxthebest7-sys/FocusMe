@@ -24,7 +24,6 @@ final class NotificationManager: NSObject {
 
     func scheduleImmediateNotification(for rule: Rule, template: NotificationTemplate?) {
         guard let template else { return }
-
         let content = makeContent(from: template, ruleId: rule.id)
         // 1-second delay so iOS treats it as a real incoming notification.
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
@@ -35,23 +34,25 @@ final class NotificationManager: NSObject {
 
     // MARK: - Calendar-based scheduling (time-based rules)
 
-    func scheduleTimeBasedRule(_ rule: Rule, trigger: TimeBasedTrigger) {
+    func scheduleTimeBasedRule(_ rule: Rule, trigger: TimeBasedTrigger, template: NotificationTemplate?) {
         cancelScheduledNotifications(for: rule)
 
-        // Use a generic title; the message library picks content per-fire via RuleEngine.
-        // For pre-scheduled notifications we embed a sentinel so the delegate can look up
-        // a real template at delivery time. For simplicity, we encode rule metadata.
+        let content: UNMutableNotificationContent
+        if let template {
+            content = makeContent(from: template, ruleId: rule.id)
+        } else {
+            content                    = UNMutableNotificationContent()
+            content.title              = rule.name
+            content.body               = "Time to check in on your rule."
+            content.sound              = .defaultCritical
+            content.categoryIdentifier = NotificationCategory.ruleViolation.rawValue
+            content.interruptionLevel  = .timeSensitive
+            content.userInfo           = ["ruleId": rule.id.uuidString, "scheduled": true]
+        }
+
         var comps        = DateComponents()
         comps.hour       = trigger.hour
         comps.minute     = trigger.minute
-
-        let content                    = UNMutableNotificationContent()
-        content.title                  = rule.name
-        content.body                   = "Your rule fired. Open Discipline to review."
-        content.sound                  = .defaultCritical
-        content.categoryIdentifier     = NotificationCategory.ruleViolation.rawValue
-        content.interruptionLevel      = .timeSensitive
-        content.userInfo               = ["ruleId": rule.id.uuidString, "scheduled": true]
 
         let calTrigger = UNCalendarNotificationTrigger(
             dateMatching: comps,
@@ -136,7 +137,6 @@ extension NotificationManager: UNUserNotificationCenterDelegate {
         willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
-        // Show banner + sound even when app is in foreground.
         completionHandler([.banner, .sound, .badge])
     }
 
@@ -145,20 +145,18 @@ extension NotificationManager: UNUserNotificationCenterDelegate {
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
-        let userInfo    = response.notification.request.content.userInfo
-        let ruleIdStr   = userInfo["ruleId"] as? String ?? ""
+        let userInfo  = response.notification.request.content.userInfo
+        let ruleIdStr = userInfo["ruleId"] as? String ?? ""
 
         switch response.actionIdentifier {
         case NotificationAction.stop.rawValue:
-            break   // User acknowledged — no further action needed.
-
+            break
         case NotificationAction.snooze.rawValue:
             NotificationCenter.default.post(
                 name: .disciplineSnoozeRequested,
                 object: nil,
                 userInfo: ["ruleId": ruleIdStr]
             )
-
         default:
             break
         }
