@@ -7,7 +7,6 @@ final class BackgroundTaskManager {
 
     private init() {}
 
-    /// Call once from App.init() to register the BGTask handler.
     func registerTasks() {
         BGTaskScheduler.shared.register(
             forTaskWithIdentifier: Self.taskIdentifier,
@@ -17,23 +16,20 @@ final class BackgroundTaskManager {
         }
     }
 
-    /// Schedule the next background evaluation. Call after each evaluation completes.
     func scheduleNextEvaluation() {
         let request = BGAppRefreshTaskRequest(identifier: Self.taskIdentifier)
-        // BGAppRefreshTask has a system-enforced minimum interval; 15 min is typical.
         request.earliestBeginDate = Date(timeIntervalSinceNow: 15 * 60)
         try? BGTaskScheduler.shared.submit(request)
     }
 
-    // MARK: - Private
-
     private func handleEvaluationTask(_ task: BGAppRefreshTask) {
-        // Always schedule the next evaluation before doing work.
         scheduleNextEvaluation()
 
-        let engine = DependencyContainer.shared.ruleEngine
-        engine.evaluateAllRules()
+        task.expirationHandler = {
+            task.setTaskCompleted(success: false)
+        }
 
+        DependencyContainer.shared.ruleEngine.evaluateAllRules()
         task.setTaskCompleted(success: true)
     }
 }
