@@ -20,11 +20,9 @@ struct SettingsView: View {
             .background(Color.black.ignoresSafeArea())
             .navigationTitle("Settings")
         }
-        // Export sheet: share plain text JSON
         .sheet(isPresented: $showExport) {
             ShareSheet(items: [exportPayload])
         }
-        // Import sheet: paste JSON
         .sheet(isPresented: $showImport) {
             importSheet
         }
@@ -52,7 +50,7 @@ struct SettingsView: View {
                 value: $vm.cooldownMinutes, in: 1...120
             )
             .foregroundColor(DS.textPrimary)
-            .onChange(of: vm.cooldownMinutes) { _ in vm.saveCooldown() }
+            .onChange(of: vm.cooldownMinutes) { _, _ in vm.saveCooldown() }
         }
         .listRowBackground(DS.surface)
     }
@@ -161,7 +159,6 @@ struct SettingsView: View {
                         importError = false
                         guard !importText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                         else { return }
-                        // Validate: attempt decode before calling VM
                         guard
                             let data  = importText.data(using: .utf8),
                             let _     = try? JSONDecoder().decode([Rule].self, from: data)

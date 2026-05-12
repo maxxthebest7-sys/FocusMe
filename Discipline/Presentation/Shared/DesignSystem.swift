@@ -3,7 +3,6 @@ import SwiftUI
 // MARK: - Palette
 
 enum DS {
-    // Authoritative red-orange accent — stern, not playful.
     static let accent           = Color(red: 0.88, green: 0.25, blue: 0.18)
     static let accentDim        = Color(red: 0.88, green: 0.25, blue: 0.18).opacity(0.15)
 
@@ -80,16 +79,19 @@ struct DayPickerRow: View {
     var body: some View {
         HStack(spacing: 4) {
             ForEach(DayOfWeek.allCases) { day in
+                let isActive = activeDays.contains(day)
                 Button {
-                    if activeDays.contains(day) { activeDays.remove(day) }
-                    else                        { activeDays.insert(day) }
+                    if isActive { activeDays.remove(day) }
+                    else        { activeDays.insert(day) }
                 } label: {
                     Text(day.singleLetter)
                         .font(.system(size: 13, weight: .bold))
                         .frame(maxWidth: .infinity, minHeight: 34)
-                        .background(activeDays.contains(day) ? DS.accent : DS.surfaceRaised)
-                        .foregroundColor(activeDays.contains(day) ? .white : DS.textSecondary)
+                        .background(isActive ? DS.accent : DS.surfaceRaised)
+                        .foregroundColor(isActive ? .white : DS.textSecondary)
                 }
+                .accessibilityLabel(day.shortName)
+                .accessibilityAddTraits(isActive ? .isSelected : [])
             }
         }
         .cornerRadius(DS.Radius.sm)
