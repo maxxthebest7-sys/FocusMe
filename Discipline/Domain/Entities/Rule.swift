@@ -8,7 +8,6 @@ struct Rule: Identifiable, Codable, Equatable {
     var activeDays: Set<DayOfWeek>
     var isEnabled: Bool
     var cooldownMinutes: Int
-    var templateIds: [UUID]
     var streakCount: Int
     var lastViolationDate: Date?
 
@@ -20,7 +19,6 @@ struct Rule: Identifiable, Codable, Equatable {
         activeDays: Set<DayOfWeek> = Set(DayOfWeek.allCases),
         isEnabled: Bool = true,
         cooldownMinutes: Int = 10,
-        templateIds: [UUID] = [],
         streakCount: Int = 0,
         lastViolationDate: Date? = nil
     ) {
@@ -31,7 +29,6 @@ struct Rule: Identifiable, Codable, Equatable {
         self.activeDays = activeDays
         self.isEnabled = isEnabled
         self.cooldownMinutes = cooldownMinutes
-        self.templateIds = templateIds
         self.streakCount = streakCount
         self.lastViolationDate = lastViolationDate
     }
