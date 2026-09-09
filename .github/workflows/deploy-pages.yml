@@ -1,0 +1,55 @@
+name: Deploy Discipline PWA
+
+# Publishes docs/ to GitHub Pages. Runs on every push that touches the PWA,
+# and can be started by hand from the Actions tab ("Run workflow").
+on:
+  push:
+    branches:
+      - main
+      - claude/review-domain-infrastructure-qNX08
+    paths:
+      - docs/**
+      - .github/workflows/deploy-pages.yml
+      - .github/scripts/gen-icons.js
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Generate PNG app icons
+        run: node .github/scripts/gen-icons.js docs
+
+      - name: Configure Pages (enables it on first run)
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Upload site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

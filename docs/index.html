@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Discipline">
+<meta name="theme-color" content="#FAFAFA">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png" type="image/png">
+<title>Discipline</title>
+<style>
+:root{
+  --bg:#FAFAFA;--surface:#FFFFFF;--surface2:#F3F4F6;
+  --border:#E5E7EB;--ink:#111111;--ink2:#6B7280;--ink3:#D1D5DB;
+  --radius:14px;--radius-sm:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{background:var(--bg)}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',sans-serif;
+  color:var(--ink);max-width:430px;margin:0 auto;min-height:100vh;
+  overscroll-behavior-y:none;
+}
+.app{display:flex;flex-direction:column;height:100vh;height:100dvh}
+.content{flex:1;overflow-y:auto;padding-bottom:88px;-webkit-overflow-scrolling:touch}
+.tab-bar{
+  position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  width:100%;max-width:430px;display:flex;
+  background:rgba(255,255,255,0.96);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-top:1px solid var(--border);z-index:100;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.tab-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:10px 0 14px;cursor:pointer;color:var(--ink3);
+  font-size:10px;font-weight:600;letter-spacing:.2px;transition:color .15s;
+  user-select:none;-webkit-user-select:none;
+}
+.tab-item.active{color:var(--ink)}
+.tab-item svg{width:22px;height:22px;stroke-width:1.8}
+.nav{
+  display:flex;align-items:flex-end;justify-content:space-between;
+  padding:calc(24px + env(safe-area-inset-top)) 20px 12px;
+  position:sticky;top:0;background:rgba(250,250,250,0.96);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  z-index:10;border-bottom:1px solid var(--border);
+}
+.nav-title{font-size:30px;font-weight:800;letter-spacing:-.5px}
+.nav-mono{font-size:13px;font-weight:500;color:var(--ink2);font-variant-numeric:tabular-nums;padding-bottom:4px}
+.btn-add{
+  width:32px;height:32px;border-radius:50%;background:var(--ink);border:none;color:#fff;
+  font-size:20px;font-weight:300;line-height:1;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.page{padding:16px 20px;display:flex;flex-direction:column;gap:24px}
+.sec-label{font-size:11px;font-weight:700;color:var(--ink2);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}
+.card{background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);overflow:hidden}
+.card-pad{padding:16px}
+.cdiv{height:1px;background:var(--border)}
+.crow{display:flex;align-items:center;gap:12px;padding:14px 16px}
+.crow.tap{cursor:pointer}
+.crow-info{flex:1;min-width:0}
+.crow-title{font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.crow-sub{font-size:12px;color:var(--ink2);margin-top:2px;line-height:1.4}
+.chev{color:var(--ink3);font-size:18px}
+.toggle{position:relative;width:48px;height:28px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.tslider{position:absolute;inset:0;background:var(--ink3);border-radius:28px;transition:.2s;cursor:pointer}
+.tslider:before{content:'';position:absolute;width:24px;height:24px;left:2px;top:2px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.toggle input:checked+.tslider{background:var(--ink)}
+.toggle input:checked+.tslider:before{transform:translateX(20px)}
+.days{display:flex;gap:4px;margin-top:5px}
+.day-dot{font-size:9px;font-weight:700;color:var(--ink3)}
+.day-dot.on{color:var(--ink)}
+.act-btn{background:none;border:none;color:var(--ink3);cursor:pointer;font-size:15px;padding:2px 4px;line-height:1;transition:color .15s}
+.act-btn:hover{color:var(--ink)}
+.status-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;display:flex;align-items:center;gap:14px}
+.status-emoji{font-size:26px;width:36px;text-align:center;flex-shrink:0}
+.status-label{font-size:15px;font-weight:600}
+.status-sub{font-size:12px;color:var(--ink2);margin-top:2px;font-variant-numeric:tabular-nums}
+.streak-row{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;gap:10px}
+.streak-val{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.chk{display:flex;gap:6px}
+.chk button{
+  border:1.5px solid var(--border);background:#fff;border-radius:20px;
+  padding:5px 11px;font-size:12px;font-weight:700;cursor:pointer;color:var(--ink);font-family:inherit;
+}
+.chk button.yes{background:var(--ink);border-color:var(--ink);color:#fff}
+.empty{display:flex;flex-direction:column;align-items:center;gap:10px;padding:64px 32px;text-align:center}
+.empty-ico{font-size:40px;opacity:.2}
+.empty-title{font-size:18px;font-weight:700}
+.empty-body{font-size:14px;color:var(--ink2);line-height:1.5}
+.btn-ink{margin-top:8px;background:var(--ink);color:#fff;border:none;border-radius:10px;padding:12px 22px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
+.btn-ghost{background:none;border:none;color:var(--ink2);font-size:14px;font-weight:600;cursor:pointer;padding:12px;font-family:inherit}
+.tmpl{padding:14px 16px}
+.tmpl-title{font-size:15px;font-weight:700}
+.tmpl-sub{font-size:11px;font-weight:600;color:var(--ink2);margin-top:2px;letter-spacing:.3px}
+.tmpl-body{font-size:13px;color:var(--ink2);margin-top:6px;line-height:1.55}
+.badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;letter-spacing:.3px}
+.badge-g{background:var(--surface2);color:var(--ink2)}
+.badge-a{background:var(--ink);color:#fff}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:200;display:none;align-items:flex-end;opacity:0;transition:opacity .2s}
+.modal-overlay.open{opacity:1}
+.modal-sheet{
+  width:100%;max-width:430px;margin:0 auto;background:var(--surface);
+  border-radius:20px 20px 0 0;max-height:94vh;overflow-y:auto;
+  transform:translateY(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.modal-overlay.open .modal-sheet{transform:translateY(0)}
+.mhdr{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 12px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:10}
+.mhdr-title{font-size:16px;font-weight:700}
+.btn-cancel{background:none;border:none;font-size:15px;color:var(--ink2);cursor:pointer;padding:2px 0;font-family:inherit}
+.btn-save{background:none;border:none;font-size:15px;font-weight:700;color:var(--ink);cursor:pointer;padding:2px 0;font-family:inherit}
+.fsec{padding:16px 20px;border-bottom:1px solid var(--border)}
+.flabel{font-size:11px;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px}
+.finput{width:100%;background:transparent;border:none;color:var(--ink);font-size:16px;outline:none;font-family:inherit}
+.ftextarea{width:100%;background:transparent;border:none;color:var(--ink);font-size:15px;outline:none;font-family:inherit;resize:none;min-height:90px;line-height:1.5}
+.fselect{width:100%;background:transparent;border:none;color:var(--ink);font-size:16px;outline:none;font-family:inherit;-webkit-appearance:none;appearance:none;cursor:pointer}
+.fselect option{background:#fff}
+.frow{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.tpick{display:flex;align-items:center;gap:6px}
+.tsel{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--ink);font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;padding:8px 10px;outline:none;-webkit-appearance:none;cursor:pointer;font-family:inherit}
+.tsel option{background:#fff}
+.tcolon{font-size:22px;font-weight:700;color:var(--ink2)}
+.dpick{display:flex;gap:4px}
+.dbtn{flex:1;height:34px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:transparent;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;color:var(--ink2);font-family:inherit}
+.dbtn.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.stepper{display:flex;align-items:center;gap:10px}
+.sbtn{width:30px;height:30px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);color:var(--ink);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1}
+.sval{font-size:15px;font-weight:600;min-width:54px;text-align:center}
+.notif-preview{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-top:10px}
+.notif-app{font-size:10px;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
+.notif-title{font-size:14px;font-weight:700}
+.notif-body{font-size:13px;color:var(--ink2);margin-top:2px;line-height:1.4}
+.infobox{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--ink2);line-height:1.5}
+.exp-area{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;color:var(--ink2);font-family:monospace;font-size:12px;width:100%;min-height:120px;resize:vertical;outline:none}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;background:var(--ink3)}
+.dot.on{background:#34C759}
+.dot.blocked{background:#FF3B30}
+
+/* ── Setup wizard (full screen, first run) ─────────────────── */
+#setup{
+  position:fixed;inset:0;z-index:300;background:var(--bg);
+  display:none;flex-direction:column;max-width:430px;margin:0 auto;
+  padding:calc(40px + env(safe-area-inset-top)) 24px calc(24px + env(safe-area-inset-bottom));
+  overflow-y:auto;
+}
+#setup.open{display:flex}
+.su-logo{width:64px;height:64px;border-radius:16px;background:var(--ink);color:#fff;font-size:36px;font-weight:800;display:flex;align-items:center;justify-content:center;margin-bottom:22px}
+.su-title{font-size:26px;font-weight:800;letter-spacing:-.4px;line-height:1.15}
+.su-sub{font-size:15px;color:var(--ink2);margin-top:8px;line-height:1.5}
+.su-steps{display:flex;flex-direction:column;gap:10px;margin-top:24px}
+.su-step{display:flex;gap:14px;align-items:flex-start;background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px}
+.su-step.done{opacity:.55}
+.su-num{width:26px;height:26px;border-radius:50%;background:var(--ink);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.su-step.done .su-num{background:#34C759}
+.su-step-t{font-size:15px;font-weight:700}
+.su-step-b{font-size:13px;color:var(--ink2);margin-top:3px;line-height:1.5}
+.su-step-b svg{width:15px;height:15px;vertical-align:-3px;stroke:var(--ink);stroke-width:2;fill:none}
+.su-actions{margin-top:auto;padding-top:24px;display:flex;flex-direction:column;gap:6px}
+.su-actions .btn-ink{width:100%;padding:15px;font-size:15px;margin:0}
+.su-hint{font-size:12px;color:var(--ink2);text-align:center;line-height:1.5;margin-top:6px}
+
+/* ── Toasts ────────────────────────────────────────────────── */
+.toast{
+  position:fixed;left:50%;transform:translateX(-50%);bottom:calc(92px + env(safe-area-inset-bottom));
+  width:calc(100% - 40px);max-width:390px;background:#fff;border:1px solid var(--border);
+  border-radius:var(--radius);padding:13px 16px;z-index:150;
+  box-shadow:0 4px 24px rgba(0,0,0,.08);display:flex;align-items:center;gap:12px;
+  animation:slideUp .3s ease;font-size:13px;line-height:1.45;
+}
+.toast strong{font-weight:700}
+.toast button{border:none;background:var(--ink);color:#fff;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap}
+.toast .x{background:none;color:var(--ink2);font-size:18px;padding:0 2px}
+@keyframes slideUp{from{opacity:0;transform:translateX(-50%) translateY(16px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+::placeholder{color:var(--ink3)}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+</style>
+</head>
+<body>
+<div id="setup"></div>
+<div class="app">
+  <div class="content" id="content"></div>
+  <div class="tab-bar" id="tabBar"></div>
+</div>
+<div class="modal-overlay" id="overlay"><div class="modal-sheet" id="sheet"></div></div>
+<script>
+'use strict';
+const APP_VERSION='1.1.0'; // keep in sync with VERSION in sw.js
+const DAYS=['S','M','T','W','T','F','S'];
+const DAY_NAMES=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const ALL_DAYS=[0,1,2,3,4,5,6];
+const BLOCK_ICONS={sleep:'🌙',study:'📚',workout:'🏃',work:'💻',free_time:'☀️',custom:'✏️'};
+const BLOCK_LABELS={sleep:'Sleep',study:'Study',workout:'Workout',work:'Work',free_time:'Free Time',custom:'Custom'};
+const CATCHUP_MIN=45; // fire a missed time-based rule if we wake within this many minutes
+
+/* ── Helpers ──────────────────────────────────────────────── */
+function uid(){return'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return(c==='x'?r:(r&0x3|0x8)).toString(16)})}
+function f2(n){return String(n).padStart(2,'0')}
+function esc(s){return s?String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'):''}
+function ts(h,m){return`${f2(h)}:${f2(m)}`}
+function nowStr(){const d=new Date();let h=d.getHours(),ap='AM';if(h>=12){ap='PM';if(h>12)h-=12;}if(!h)h=12;return`${h}:${f2(d.getMinutes())} ${ap}`}
+function dayKey(d=new Date()){return`${d.getFullYear()}-${f2(d.getMonth()+1)}-${f2(d.getDate())}`}
+function yesterdayKey(){const d=new Date();d.setDate(d.getDate()-1);return dayKey(d)}
+function blkActive(b){const t=new Date(),n=t.getHours()*60+t.getMinutes(),s=b.startHour*60+b.startMinute,e=b.endHour*60+b.endMinute;return s<=e?n>=s&&n<e:n>=s||n<e}
+function getActiveBlock(){return state.schedule.blocks.find(blkActive)||null}
+function trig(r){if(r.triggerType==='timeBased')return`Daily at ${f2(r.hour)}:${f2(r.minute)}`;if(r.triggerType==='conflictBased')return`During ${BLOCK_LABELS[r.conflictBlockType]||r.conflictBlockType} block`;if(r.triggerType==='appBased')return'App launch (needs native app)';if(r.triggerType==='durationBased')return`After ${r.durationLimit||30} min/day (needs native app)`;return''}
+function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v);}catch(_){return null}}
+
+/* ── Platform detection ───────────────────────────────────── */
+const ua=navigator.userAgent;
+const IS_IOS=/iPad|iPhone|iPod/.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const IS_SAFARI=/Safari/.test(ua)&&!/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua);
+function isStandalone(){return!!navigator.standalone||window.matchMedia('(display-mode: standalone)').matches}
+function hasNotif(){return'Notification' in window&&typeof Notification!=='undefined'}
+function notifPerm(){return hasNotif()?Notification.permission:'unsupported'}
+
+/* ── Data ─────────────────────────────────────────────────── */
+const STARTER=[
+  {id:uid(),title:'Hey.',subtitle:'Sleep boundary',body:"It's past your bedtime. You said you'd sleep at this hour. Put the phone down.",assignedRuleIds:[],isGlobal:true},
+  {id:uid(),title:'Still here?',subtitle:'Social media',body:"Nothing meaningful happens on this app at this hour. You know that. Close it.",assignedRuleIds:[],isGlobal:true},
+  {id:uid(),title:'This is the version of you that loses.',subtitle:'Late night check',body:'The disciplined version of you went to sleep an hour ago. Decide which one shows up tomorrow.',assignedRuleIds:[],isGlobal:true},
+  {id:uid(),title:"One more scroll won't help.",subtitle:'Habit reminder',body:"You've told yourself that three times. It's not going to be different this time.",assignedRuleIds:[],isGlobal:true},
+  {id:uid(),title:'Your future self is watching.',subtitle:'Discipline check',body:'Right now. This decision. This is the kind of moment that compounds. Make the right call.',assignedRuleIds:[],isGlobal:true},
+  {id:uid(),title:'You set this rule for a reason.',subtitle:'Rule reminder',body:'You knew this moment would come. Past you was right. Listen to them.',assignedRuleIds:[],isGlobal:true},
+  {id:uid(),title:'Sleep is a performance drug.',subtitle:'Sleep science',body:"Every hour you lose tonight costs you tomorrow in focus, memory, and mood. Lights out.",assignedRuleIds:[],isGlobal:true},
+  {id:uid(),title:'Seriously?',subtitle:'Direct check',body:"It's late. You have goals. This isn't aligned with them. Stop.",assignedRuleIds:[],isGlobal:true},
+];
+const DEF_SCH={blocks:[
+  {id:uid(),type:'sleep',label:'Sleep',startHour:23,startMinute:0,endHour:7,endMinute:0},
+  {id:uid(),type:'study',label:'Study',startHour:9,startMinute:0,endHour:12,endMinute:0},
+  {id:uid(),type:'workout',label:'Workout',startHour:17,startMinute:0,endHour:18,endMinute:0},
+]};
+function load(){
+  try{
+    const j=k=>JSON.parse(ls(k)||'null');
+    return{rules:j('d.rules')||[],schedule:j('d.schedule')||DEF_SCH,templates:j('d.templates')||STARTER,cooldown:parseInt(ls('d.cooldown')||'10',10)||10};
+  }catch(_){return{rules:[],schedule:DEF_SCH,templates:STARTER,cooldown:10}}
+}
+function save(){ls('d.rules',JSON.stringify(state.rules));ls('d.schedule',JSON.stringify(state.schedule));ls('d.templates',JSON.stringify(state.templates));ls('d.cooldown',String(state.cooldown))}
+
+let state=load(),tab='today',md={},clk=null,swReg=null,schedTimer=null,installPrompt=null;
+
+/* ── Notifications ────────────────────────────────────────── */
+async function fireNotif(title,body,tag){
+  if(notifPerm()!=='granted')return false;
+  const opts={body,icon:'./icon-192.png',badge:'./icon-192.png',tag:tag||'discipline',renotify:true};
+  try{
+    if(swReg&&swReg.showNotification)await swReg.showNotification(title,opts);
+    else new Notification(title,opts);
+    return true;
+  }catch(e){console.warn('notify:',e);return false}
+}
+function pickTemplate(rule){
+  const assigned=state.templates.filter(t=>(t.assignedRuleIds||[]).includes(rule.id));
+  const global_=state.templates.filter(t=>t.isGlobal||!t.assignedRuleIds||!t.assignedRuleIds.length);
+  const pool=assigned.length?assigned:global_;
+  return pool.length?pool[Math.floor(Math.random()*pool.length)]:{title:'Discipline',body:rule.name};
+}
+function cooldownOk(rule){
+  const last=parseInt(ls(`d.last.${rule.id}`)||'0',10);
+  const mins=Math.max(rule.cooldownMinutes||10,state.cooldown||10);
+  return Date.now()-last>=mins*60000;
+}
+async function checkDue(){
+  if(notifPerm()!=='granted')return;
+  const now=new Date(),nowMin=now.getHours()*60+now.getMinutes(),today=dayKey(now),dow=now.getDay();
+  const active=getActiveBlock();
+  for(const rule of state.rules){
+    if(!rule.isEnabled||!(rule.activeDays||ALL_DAYS).includes(dow))continue;
+    let due=false;
+    if(rule.triggerType==='timeBased'){
+      const at=(rule.hour||0)*60+(rule.minute||0);
+      // fire at the exact minute, or catch up if the app was asleep for a bit — once per day
+      due=nowMin>=at&&nowMin-at<=CATCHUP_MIN&&ls(`d.fired.${rule.id}`)!==today;
+    }else if(rule.triggerType==='conflictBased'){
+      due=!!active&&active.type===rule.conflictBlockType;
+    }
+    if(!due||!cooldownOk(rule))continue;
+    if(rule.triggerType==='timeBased')ls(`d.fired.${rule.id}`,today);
+    ls(`d.last.${rule.id}`,String(Date.now()));
+    const t=pickTemplate(rule);
+    await fireNotif(t.title,t.body,rule.id);
+  }
+}
+function startScheduler(){
+  if(schedTimer)return;
+  checkDue();
+  schedTimer=setInterval(checkDue,30000);
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')checkDue()});
+  window.addEventListener('focus',checkDue);
+}
+async function enableNotifs(){
+  if(!hasNotif()){
+    alert(IS_IOS?'On iPhone, notifications only work after you add Discipline to your Home Screen and open it from there.':'This browser does not support notifications.');
+    return false;
+  }
+  let p='denied';
+  try{p=await Notification.requestPermission();}catch(_){}
+  if(p==='granted'){startScheduler();setTimeout(()=>fireNotif('Discipline',"Reminders are on. You'll hear from me when a rule fires.",'setup'),400);}
+  renderPage();renderSetup();
+  return p==='granted';
+}
+async function testNotif(){
+  const t=state.templates[Math.floor(Math.random()*state.templates.length)];
+  const ok=await fireNotif(t?t.title:'Discipline',t?t.body:'Notifications are working.','test');
+  if(!ok)alert('Could not show a notification. Check Settings → Notifications → Discipline on your phone.');
+}
+
+/* ── Streaks (daily check-in) ─────────────────────────────── */
+function needsCheckin(r){return r.isEnabled&&ls(`d.checkin.${r.id}`)!==dayKey()}
+function checkin(id,held){
+  const r=state.rules.find(x=>x.id===id);if(!r)return;
+  ls(`d.checkin.${id}`,dayKey());
+  r.streakCount=held?(r.streakCount||0)+1:0;
+  save();renderPage();
+}
+
+/* ── Setup wizard ─────────────────────────────────────────── */
+function setupNeeded(){
+  if(ls('d.setupDone'))return false;
+  if(IS_IOS)return!isStandalone()||notifPerm()!=='granted';
+  return notifPerm()==='default'||!!installPrompt;
+}
+function shareSvg(){return`<svg viewBox="0 0 24 24"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/></svg>`}
+function plusSvg(){return`<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/></svg>`}
+function renderSetup(){
+  const el=document.getElementById('setup');
+  if(!setupNeeded()){el.classList.remove('open');return;}
+  const sa=isStandalone(),perm=notifPerm();
+  let steps='',primary='',hint='';
+  if(IS_IOS){
+    if(!IS_SAFARI&&!sa){
+      steps=step(1,'Open this page in Safari',`Copy the link and paste it into <strong>Safari</strong>. Only Safari can install web apps on iPhone.`);
+      primary=`<button class="btn-ink" onclick="copyLink()">Copy link</button>`;
+      hint='Then follow the steps that appear in Safari.';
+    }else if(!sa){
+      steps=step(1,'Tap the Share button',`It's the ${shareSvg()} icon in Safari's bottom toolbar.`)+
+            step(2,'Tap “Add to Home Screen”',`Scroll down the share sheet to find ${plusSvg()} <strong>Add to Home Screen</strong>, then tap <strong>Add</strong>.`)+
+            step(3,'Open Discipline from your Home Screen','Close Safari and tap the new black <strong>D</strong> icon. Setup finishes there automatically.');
+      primary='';
+      hint='Reminders only work from the Home Screen icon, not from a Safari tab.';
+    }else if(perm==='default'){
+      steps=step(1,'Added to Home Screen','Done.',true)+step(2,'Turn on reminders','Tap the button below and choose <strong>Allow</strong>.');
+      primary=`<button class="btn-ink" onclick="enableNotifs()">Turn on reminders</button>`;
+    }else if(perm==='denied'){
+      steps=step(1,'Added to Home Screen','Done.',true)+step(2,'Reminders are blocked','Open iPhone <strong>Settings → Notifications → Discipline</strong> and switch on <strong>Allow Notifications</strong>, then come back.');
+      primary=`<button class="btn-ink" onclick="renderSetup()">I turned them on</button>`;
+    }else{
+      steps=step(1,'Added to Home Screen','Done.',true)+step(2,'Reminders are on','Done.',true);
+      primary=`<button class="btn-ink" onclick="finishSetup()">Start</button>`;
+    }
+  }else{
+    if(installPrompt)steps+=step(1,'Install Discipline','Adds an app icon so it opens full screen.');
+    if(perm==='default')steps+=step(installPrompt?2:1,'Turn on reminders','You will be asked to allow notifications.');
+    primary=installPrompt?`<button class="btn-ink" onclick="doInstallPrompt()">Install app</button>`:`<button class="btn-ink" onclick="enableNotifs().then(finishSetup)">Turn on reminders</button>`;
+  }
+  el.innerHTML=`<div class="su-logo">D</div><div class="su-title">Discipline</div><div class="su-sub">${sa?'Almost there.':'Two minutes to set up. No account, nothing to download.'}</div><div class="su-steps">${steps}</div><div class="su-actions">${primary}<button class="btn-ghost" onclick="finishSetup()">${sa&&perm==='granted'?'':'Skip for now'}</button><div class="su-hint">${hint}</div></div>`;
+  el.classList.add('open');
+}
+function step(n,t,b,done){return`<div class="su-step${done?' done':''}"><div class="su-num">${done?'✓':n}</div><div><div class="su-step-t">${t}</div><div class="su-step-b">${b}</div></div></div>`}
+function finishSetup(){ls('d.setupDone','1');document.getElementById('setup').classList.remove('open');renderPage()}
+function reopenSetup(){try{localStorage.removeItem('d.setupDone')}catch(_){}renderSetup();if(!setupNeeded())alert('Setup is already complete on this device.')}
+async function doInstallPrompt(){if(!installPrompt)return;installPrompt.prompt();try{await installPrompt.userChoice}catch(_){}installPrompt=null;renderSetup()}
+function copyLink(){const url=location.href.split('?')[0];if(navigator.clipboard)navigator.clipboard.writeText(url).then(()=>alert('Link copied. Open Safari and paste it in the address bar.'));else prompt('Copy this link, then open it in Safari:',url)}
+
+/* ── Update toast ─────────────────────────────────────────── */
+function toast(html,onAct,actLabel){
+  document.querySelectorAll('.toast').forEach(t=>t.remove());
+  const el=document.createElement('div');el.className='toast';
+  el.innerHTML=`<div style="flex:1">${html}</div>${onAct?`<button id="toastAct">${actLabel}</button>`:''}<button class="x" onclick="this.parentNode.remove()">×</button>`;
+  document.body.appendChild(el);
+  if(onAct)el.querySelector('#toastAct').onclick=onAct;
+}
+function watchForUpdates(reg){
+  if(!reg)return;
+  const announce=w=>{w.addEventListener('statechange',()=>{if(w.state==='installed'&&navigator.serviceWorker.controller)toast('<strong>Update available.</strong> Reload to get the latest fixes.',()=>w.postMessage({type:'SKIP_WAITING'}),'Reload')})};
+  if(reg.waiting&&navigator.serviceWorker.controller)toast('<strong>Update available.</strong> Reload to get the latest fixes.',()=>reg.waiting.postMessage({type:'SKIP_WAITING'}),'Reload');
+  if(reg.installing)announce(reg.installing);
+  reg.addEventListener('updatefound',()=>announce(reg.installing));
+  let reloading=false;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(reloading)return;reloading=true;location.reload()});
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')reg.update().catch(()=>{})});
+}
+async function checkForUpdates(){
+  if(!swReg){alert('Not installed as an app yet.');return}
+  try{await swReg.update();if(swReg.waiting)toast('<strong>Update ready.</strong>',()=>swReg.waiting.postMessage({type:'SKIP_WAITING'}),'Reload');else toast(`You're on the latest version (${APP_VERSION}).`)}catch(_){toast('Could not check for updates — are you online?')}
+}
+
+/* ── Init ─────────────────────────────────────────────────── */
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;renderSetup()});
+async function init(){
+  render();               // never let anything below block first paint
+  renderSetup();
+  if('serviceWorker' in navigator){
+    try{swReg=await navigator.serviceWorker.register('./sw.js',{scope:'./'});watchForUpdates(swReg);}
+    catch(e){console.warn('SW:',e)}
+  }
+  if(notifPerm()==='granted')startScheduler();
+}
+
+/* ── Render ───────────────────────────────────────────────── */
+function render(){renderTabs();renderPage()}
+function renderTabs(){
+  const T=[{id:'today',svg:houseIco(),label:'Today'},{id:'rules',svg:shieldIco(),label:'Rules'},{id:'schedule',svg:calIco(),label:'Schedule'},{id:'messages',svg:msgIco(),label:'Messages'},{id:'settings',svg:gearIco(),label:'Settings'}];
+  document.getElementById('tabBar').innerHTML=T.map(t=>`<div class="tab-item${tab===t.id?' active':''}" onclick="go('${t.id}')">${t.svg}<span>${t.label}</span></div>`).join('');
+}
+function renderPage(){
+  if(clk){clearInterval(clk);clk=null}
+  const pages={today:pgToday,rules:pgRules,schedule:pgSchedule,messages:pgMessages,settings:pgSettings};
+  document.getElementById('content').innerHTML=(pages[tab]||pgToday)();
+  if(tab==='today')clk=setInterval(()=>{const e=document.getElementById('clk');if(e)e.textContent=nowStr()},15000);
+}
+function go(t){tab=t;render();document.getElementById('content').scrollTop=0}
+
+/* ── Today ────────────────────────────────────────────────── */
+function pgToday(){
+  const b=getActiveBlock();
+  const status=b
+    ?`<div class="status-card"><span class="status-emoji">${BLOCK_ICONS[b.type]||'📌'}</span><div><div class="status-label">${esc(b.label)}</div><div class="status-sub">${ts(b.startHour,b.startMinute)} – ${ts(b.endHour,b.endMinute)}</div></div></div>`
+    :`<div class="status-card"><span class="status-emoji" style="opacity:.25">○</span><div class="status-label" style="color:var(--ink2)">No active block</div></div>`;
+  const perm=notifPerm();
+  const warn=perm==='granted'?'':`<div class="card tap" onclick="${IS_IOS&&!isStandalone()?'reopenSetup()':'enableNotifs()'}"><div class="crow"><div class="dot ${perm==='denied'?'blocked':''}"></div><div class="crow-info"><div class="crow-title">Reminders are off</div><div class="crow-sub">${IS_IOS&&!isStandalone()?'Add to Home Screen to enable them':perm==='denied'?'Blocked in system settings':'Tap to turn on'}</div></div><span class="chev">›</span></div></div>`;
+  const pending=state.rules.filter(needsCheckin);
+  const checkins=pending.length?`<div><div class="sec-label">Check-in · yesterday</div><div class="card">${pending.map((r,i)=>`${i>0?'<div class="cdiv"></div>':''}<div class="streak-row"><div class="crow-info"><div class="crow-title">${esc(r.name)}</div><div class="crow-sub">Did you hold this rule?</div></div><div class="chk"><button class="yes" onclick="checkin('${r.id}',true)">Held it</button><button onclick="checkin('${r.id}',false)">Slipped</button></div></div>`).join('')}</div></div>`:'';
+  const rules=state.rules.length===0
+    ?`<div class="card card-pad" style="color:var(--ink2);font-size:14px">No rules yet — add one in the Rules tab.</div>`
+    :`<div class="card">${state.rules.map((r,i)=>`${i>0?'<div class="cdiv"></div>':''}<div class="crow"><div class="crow-info"><div class="crow-title" style="color:${r.isEnabled?'var(--ink)':'var(--ink2)'}">${esc(r.name)}</div><div class="crow-sub">${trig(r)}</div></div><label class="toggle"><input type="checkbox" ${r.isEnabled?'checked':''} onchange="toggleRule('${r.id}')"><span class="tslider"></span></label></div>`).join('')}</div>`;
+  const streaking=state.rules.filter(r=>(r.streakCount||0)>0);
+  const streaks=streaking.length===0
+    ?`<div class="card card-pad" style="color:var(--ink2);font-size:14px">Check in each day to build a streak.</div>`
+    :`<div class="card">${streaking.map((r,i)=>`${i>0?'<div class="cdiv"></div>':''}<div class="streak-row"><span style="font-size:15px;font-weight:600">${esc(r.name)}</span><span class="streak-val">🔥 ${r.streakCount}d</span></div>`).join('')}</div>`;
+  return`<div class="nav"><span class="nav-title">Discipline</span><span class="nav-mono" id="clk">${nowStr()}</span></div><div class="page">${warn}${status}${checkins}<div><div class="sec-label">Rules</div>${rules}</div><div><div class="sec-label">Streaks</div>${streaks}</div></div>`;
+}
+
+/* ── Rules ────────────────────────────────────────────────── */
+function pgRules(){
+  const hdr=`<div class="nav"><span class="nav-title">Rules</span><button class="btn-add" onclick="openAddRule()">+</button></div>`;
+  if(!state.rules.length)return hdr+`<div class="empty"><div class="empty-ico">🛡️</div><div class="empty-title">No rules yet</div><div class="empty-body">Add your first rule to start enforcing discipline.</div><button class="btn-ink" onclick="openAddRule()">Add Rule</button></div>`;
+  return hdr+`<div class="page" style="padding-top:14px"><div class="card">${state.rules.map((r,i)=>`${i>0?'<div class="cdiv"></div>':''}<div class="crow"><div style="width:7px;height:7px;border-radius:50%;background:${r.isEnabled?'var(--ink)':'var(--ink3)'};flex-shrink:0"></div><div class="crow-info"><div class="crow-title" style="color:${r.isEnabled?'var(--ink)':'var(--ink2)'}">${esc(r.name)}</div><div class="crow-sub">${trig(r)}</div><div class="days">${DAY_NAMES.map((n,j)=>`<span class="day-dot${(r.activeDays||ALL_DAYS).includes(j)?' on':''}">${DAYS[j]}</span>`).join('')}</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px"><label class="toggle"><input type="checkbox" ${r.isEnabled?'checked':''} onchange="toggleRule('${r.id}')"><span class="tslider"></span></label><div style="display:flex;gap:4px"><button class="act-btn" onclick="openEditRule('${r.id}')">✏️</button><button class="act-btn" onclick="delRule('${r.id}')">×</button></div></div></div>`).join('')}</div></div>`;
+}
+
+/* ── Schedule ─────────────────────────────────────────────── */
+function pgSchedule(){
+  const bl=state.schedule.blocks;
+  const hdr=`<div class="nav"><span class="nav-title">Schedule</span><button class="btn-add" onclick="openAddBlock()">+</button></div>`;
+  if(!bl.length)return hdr+`<div class="empty"><div class="empty-ico">📅</div><div class="empty-title">No blocks yet</div><div class="empty-body">Add time blocks to enable schedule-conflict rules.</div><button class="btn-ink" onclick="openAddBlock()">Add Block</button></div>`;
+  return hdr+`<div class="page" style="padding-top:14px"><div class="card">${bl.map((b,i)=>`${i>0?'<div class="cdiv"></div>':''}<div class="crow"><span style="font-size:20px;width:28px;text-align:center">${BLOCK_ICONS[b.type]||'📌'}</span><div class="crow-info"><div class="crow-title">${esc(b.label)}</div><div class="crow-sub">${ts(b.startHour,b.startMinute)} – ${ts(b.endHour,b.endMinute)} · ${BLOCK_LABELS[b.type]||b.type}${blkActive(b)?'&nbsp;· <span style="color:var(--ink);font-weight:600">Now</span>':''}</div></div><div style="display:flex;gap:4px"><button class="act-btn" onclick="openEditBlock('${b.id}')">✏️</button><button class="act-btn" onclick="delBlock('${b.id}')">×</button></div></div>`).join('')}</div></div>`;
+}
+
+/* ── Messages ─────────────────────────────────────────────── */
+function pgMessages(){
+  const isG=t=>!t.assignedRuleIds||!t.assignedRuleIds.length;
+  const global_=state.templates.filter(isG),assigned=state.templates.filter(t=>!isG(t));
+  const tc=(t,i)=>`${i>0?'<div class="cdiv"></div>':''}<div class="tmpl"><div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px"><div><div class="tmpl-title">${esc(t.title)}</div>${t.subtitle?`<div class="tmpl-sub">${esc(t.subtitle)}</div>`:''}</div><div style="display:flex;gap:6px;align-items:center"><span class="badge ${isG(t)?'badge-g':'badge-a'}">${isG(t)?'GLOBAL':'ASSIGNED'}</span><button class="act-btn" onclick="openEditTmpl('${t.id}')">✏️</button><button class="act-btn" onclick="delTmpl('${t.id}')">×</button></div></div><div class="tmpl-body">${esc(t.body)}</div></div>`;
+  return`<div class="nav"><span class="nav-title">Messages</span><button class="btn-add" onclick="openAddTmpl()">+</button></div><div class="page" style="padding-top:14px"><div><div class="sec-label">Global — applies to all rules</div>${global_.length?`<div class="card">${global_.map(tc).join('')}</div>`:'<div class="card card-pad" style="color:var(--ink2);font-size:14px">No global messages yet.</div>'}</div>${assigned.length?`<div><div class="sec-label">Rule-specific</div><div class="card">${assigned.map(tc).join('')}</div></div>`:''}<div class="infobox">Each reminder picks a random message assigned to that rule, falling back to global messages.</div></div>`;
+}
+
+/* ── Settings ─────────────────────────────────────────────── */
+function pgSettings(){
+  const perm=notifPerm(),sa=isStandalone();
+  let rows;
+  if(IS_IOS&&!sa)rows=`<div class="crow tap" onclick="reopenSetup()"><div class="dot"></div><div class="crow-info"><div class="crow-title">Add to Home Screen first</div><div class="crow-sub">Reminders on iPhone only work from the installed icon</div></div><span class="chev">›</span></div>`;
+  else if(perm==='unsupported')rows=`<div class="crow"><div class="dot"></div><div class="crow-info"><div class="crow-title" style="color:var(--ink2)">Not supported here</div><div class="crow-sub">Use Safari on iOS 16.4+, or Chrome / Edge</div></div></div>`;
+  else if(perm==='denied')rows=`<div class="crow"><div class="dot blocked"></div><div class="crow-info"><div class="crow-title">Reminders blocked</div><div class="crow-sub">${IS_IOS?'iPhone Settings → Notifications → Discipline → Allow':'Allow notifications for this site in your browser settings'}</div></div></div>`;
+  else if(perm==='granted')rows=`<div class="crow"><div class="dot on"></div><div class="crow-info"><div class="crow-title">Reminders on</div><div class="crow-sub">Time-based and schedule rules will alert you</div></div></div><div class="cdiv"></div><div class="crow tap" onclick="testNotif()"><div class="crow-info"><div class="crow-title">Send test reminder</div></div><span class="chev">›</span></div>`;
+  else rows=`<div class="crow tap" onclick="enableNotifs()"><div class="dot"></div><div class="crow-info"><div class="crow-title">Turn on reminders</div><div class="crow-sub">Required for rules to alert you</div></div><span class="chev">›</span></div>`;
+  return`<div class="nav"><span class="nav-title">Settings</span></div><div class="page">
+<div><div class="sec-label">Reminders</div><div class="card">${rows}</div></div>
+<div><div class="sec-label">Cooldown</div><div class="card"><div class="crow" style="justify-content:space-between"><div><div class="crow-title">Global cooldown</div><div class="crow-sub">Minimum time between any two alerts</div></div><div class="stepper"><button class="sbtn" onclick="adjCD(-5)">−</button><span class="sval" id="cdv">${state.cooldown} min</span><button class="sbtn" onclick="adjCD(5)">+</button></div></div></div></div>
+<div><div class="sec-label">Backup</div><div class="card"><div class="crow tap" onclick="exportAll()"><div class="crow-info"><div class="crow-title">Export everything</div><div class="crow-sub">Rules, schedule and messages as JSON</div></div><span class="chev">↗</span></div><div class="cdiv"></div><div class="crow tap" onclick="openImport()"><div class="crow-info"><div class="crow-title">Import backup</div><div class="crow-sub">Paste JSON to restore or merge</div></div><span class="chev">↘</span></div></div></div>
+<div><div class="sec-label">App</div><div class="card"><div class="crow tap" onclick="checkForUpdates()"><div class="crow-info"><div class="crow-title">Check for updates</div><div class="crow-sub">Version ${APP_VERSION}${sa?' · installed':''}</div></div><span class="chev">›</span></div><div class="cdiv"></div><div class="crow tap" onclick="reopenSetup()"><div class="crow-info"><div class="crow-title">Setup guide</div><div class="crow-sub">Re-run the install steps</div></div><span class="chev">›</span></div><div class="cdiv"></div><div class="crow"><div class="crow-info"><div class="crow-title">Privacy</div><div class="crow-sub">All data stays on this device. No accounts, no cloud.</div></div></div></div></div>
+<div class="infobox">App-launch and screen-time rules need the native iOS app with Apple's FamilyControls entitlement. Everything else works here.</div>
+</div>`;
+}
+
+/* ── Modal ────────────────────────────────────────────────── */
+function openModal(html){const o=document.getElementById('overlay');document.getElementById('sheet').innerHTML=html;o.style.display='flex';requestAnimationFrame(()=>o.classList.add('open'))}
+function closeModal(){const o=document.getElementById('overlay');o.classList.remove('open');setTimeout(()=>{o.style.display='none';renderPage()},280)}
+document.getElementById('overlay').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal()});
+
+/* ── Rule form ────────────────────────────────────────────── */
+const MINS=[0,5,10,15,20,25,30,35,40,45,50,55];
+const hourSel=(cur,on)=>`<select class="tsel" onchange="${on}">${Array.from({length:24},(_,i)=>`<option value="${i}" ${i===cur?'selected':''}>${f2(i)}</option>`).join('')}</select>`;
+const minSel=(cur,on)=>`<select class="tsel" onchange="${on}">${MINS.map(m=>`<option value="${m}" ${m===cur?'selected':''}>${f2(m)}</option>`).join('')}</select>`;
+function openAddRule(){md={mode:'add',name:'',triggerType:'timeBased',hour:22,minute:0,repeats:true,conflictBlockType:'sleep',durationLimit:30,activeDays:[...ALL_DAYS],cool:10};openModal(ruleForm())}
+function openEditRule(id){const r=state.rules.find(x=>x.id===id);if(!r)return;md={mode:'edit',id:r.id,name:r.name,triggerType:r.triggerType,hour:r.hour||22,minute:r.minute||0,repeats:r.repeats!==false,conflictBlockType:r.conflictBlockType||'sleep',durationLimit:r.durationLimit||30,activeDays:[...(r.activeDays||ALL_DAYS)],cool:r.cooldownMinutes||10};openModal(ruleForm())}
+function ruleForm(){
+  const d=md;
+  const tc=d.triggerType==='timeBased'
+    ?`<div class="fsec"><div class="flabel">Fire at</div><div class="tpick">${hourSel(d.hour,'md.hour=+this.value')}<span class="tcolon">:</span>${minSel(d.minute,'md.minute=+this.value')}</div></div>`
+    :d.triggerType==='conflictBased'
+    ?`<div class="fsec"><div class="flabel">Fires when you open the app during</div><select class="fselect" onchange="md.conflictBlockType=this.value">${Object.entries(BLOCK_LABELS).map(([v,l])=>`<option value="${v}" ${v===d.conflictBlockType?'selected':''}>${BLOCK_ICONS[v]} ${l}</option>`).join('')}</select></div>`
+    :`<div class="fsec"><div class="infobox">This rule type needs the native iOS app (Screen Time access). It will be saved but can't fire here.${d.triggerType==='durationBased'?`<div class="frow" style="margin-top:12px"><span style="font-size:14px">Daily limit</span><div class="stepper"><button class="sbtn" onclick="md.durationLimit=Math.max(5,md.durationLimit-5);document.getElementById('dlv').textContent=md.durationLimit+' min'">−</button><span class="sval" id="dlv">${d.durationLimit} min</span><button class="sbtn" onclick="md.durationLimit=Math.min(480,md.durationLimit+5);document.getElementById('dlv').textContent=md.durationLimit+' min'">+</button></div></div>`:''}</div></div>`;
+  return`<div class="mhdr"><button class="btn-cancel" onclick="closeModal()">Cancel</button><span class="mhdr-title">${d.mode==='add'?'New Rule':'Edit Rule'}</span><button class="btn-save" onclick="saveRule()">Save</button></div><div class="fsec"><div class="flabel">Name</div><input class="finput" placeholder="e.g. No Instagram after 10pm" value="${esc(d.name)}" oninput="md.name=this.value"></div><div class="fsec"><div class="flabel">Trigger</div><select class="fselect" onchange="md.triggerType=this.value;document.getElementById('sheet').innerHTML=ruleForm()"><option value="timeBased" ${d.triggerType==='timeBased'?'selected':''}>Time of day</option><option value="conflictBased" ${d.triggerType==='conflictBased'?'selected':''}>Schedule conflict</option><option value="appBased" ${d.triggerType==='appBased'?'selected':''}>App launch (native only)</option><option value="durationBased" ${d.triggerType==='durationBased'?'selected':''}>App duration (native only)</option></select></div>${tc}<div class="fsec"><div class="flabel">Active days</div><div class="dpick">${DAY_NAMES.map((n,i)=>`<button class="dbtn ${(d.activeDays||[]).includes(i)?'on':''}" onclick="tday(${i},this)" title="${n}">${DAYS[i]}</button>`).join('')}</div></div><div class="fsec"><div class="flabel">Cooldown between alerts</div><div class="stepper"><button class="sbtn" onclick="md.cool=Math.max(1,md.cool-5);document.getElementById('crv').textContent=md.cool+' min'">−</button><span class="sval" id="crv">${d.cool} min</span><button class="sbtn" onclick="md.cool=Math.min(120,md.cool+5);document.getElementById('crv').textContent=md.cool+' min'">+</button></div></div><div style="height:32px"></div>`;
+}
+function tday(i,btn){const x=md.activeDays.indexOf(i);if(x>=0)md.activeDays.splice(x,1);else md.activeDays.push(i);btn.className='dbtn '+(md.activeDays.includes(i)?'on':'')}
+function saveRule(){
+  const name=(md.name||'').trim();if(!name){alert('Enter a rule name.');return}if(!md.activeDays.length){alert('Select at least one day.');return}
+  const prev=md.mode==='edit'?state.rules.find(x=>x.id===md.id):null;
+  const r={id:prev?prev.id:uid(),name,triggerType:md.triggerType,hour:md.hour,minute:md.minute,repeats:md.repeats,conflictBlockType:md.conflictBlockType,durationLimit:md.durationLimit,activeDays:[...md.activeDays].sort(),cooldownMinutes:md.cool,isEnabled:prev?prev.isEnabled:true,streakCount:prev?prev.streakCount||0:0};
+  if(prev){state.rules[state.rules.indexOf(prev)]=r;if(prev.hour!==r.hour||prev.minute!==r.minute){try{localStorage.removeItem(`d.fired.${r.id}`)}catch(_){}}}
+  else state.rules.push(r);
+  save();closeModal();
+}
+
+/* ── Block form ───────────────────────────────────────────── */
+function openAddBlock(){md={mode:'add',label:'',type:'sleep',startHour:9,startMinute:0,endHour:10,endMinute:0};openModal(blockForm())}
+function openEditBlock(id){const b=state.schedule.blocks.find(x=>x.id===id);if(!b)return;md={mode:'edit',...b};openModal(blockForm())}
+function blockForm(){const d=md;return`<div class="mhdr"><button class="btn-cancel" onclick="closeModal()">Cancel</button><span class="mhdr-title">${d.mode==='add'?'New Block':'Edit Block'}</span><button class="btn-save" onclick="saveBlock()">Save</button></div><div class="fsec"><div class="flabel">Label</div><input class="finput" placeholder="e.g. Deep Work" value="${esc(d.label)}" oninput="md.label=this.value"></div><div class="fsec"><div class="flabel">Type</div><select class="fselect" onchange="md.type=this.value">${Object.entries(BLOCK_LABELS).map(([v,l])=>`<option value="${v}" ${v===d.type?'selected':''}>${BLOCK_ICONS[v]} ${l}</option>`).join('')}</select></div><div class="fsec"><div class="flabel">Start</div><div class="tpick">${hourSel(d.startHour,'md.startHour=+this.value')}<span class="tcolon">:</span>${minSel(d.startMinute,'md.startMinute=+this.value')}</div></div><div class="fsec"><div class="flabel">End</div><div class="tpick">${hourSel(d.endHour,'md.endHour=+this.value')}<span class="tcolon">:</span>${minSel(d.endMinute,'md.endMinute=+this.value')}</div><div style="font-size:12px;color:var(--ink2);margin-top:8px">Overnight blocks (e.g. 23:00–07:00) are supported.</div></div><div style="height:32px"></div>`}
+function saveBlock(){const label=(md.label||'').trim();if(!label){alert('Enter a label.');return}if(md.startHour===md.endHour&&md.startMinute===md.endMinute){alert('Start and end can\'t be the same time.');return}const b={id:md.mode==='edit'?md.id:uid(),label,type:md.type,startHour:md.startHour,startMinute:md.startMinute,endHour:md.endHour,endMinute:md.endMinute};if(md.mode==='add')state.schedule.blocks.push(b);else{const i=state.schedule.blocks.findIndex(x=>x.id===md.id);if(i>=0)state.schedule.blocks[i]=b}save();closeModal()}
+
+/* ── Template form ────────────────────────────────────────── */
+function openAddTmpl(){md={mode:'add',title:'',subtitle:'',body:'',isGlobal:true,assignedRuleIds:[]};openModal(tmplForm())}
+function openEditTmpl(id){const t=state.templates.find(x=>x.id===id);if(!t)return;md={mode:'edit',id:t.id,title:t.title,subtitle:t.subtitle||'',body:t.body,isGlobal:!t.assignedRuleIds||!t.assignedRuleIds.length,assignedRuleIds:[...(t.assignedRuleIds||[])]};openModal(tmplForm())}
+function tmplForm(){
+  const d=md;
+  const assign=d.isGlobal?'':`<div class="fsec"><div class="flabel">Assign to rules</div>${state.rules.length?state.rules.map(r=>`<div class="frow" style="padding:6px 0"><span style="font-size:14px">${esc(r.name)}</span><label class="toggle"><input type="checkbox" ${d.assignedRuleIds.includes(r.id)?'checked':''} onchange="tAssign('${r.id}',this.checked)"><span class="tslider"></span></label></div>`).join(''):'<div style="font-size:13px;color:var(--ink2)">Create a rule first.</div>'}</div>`;
+  return`<div class="mhdr"><button class="btn-cancel" onclick="closeModal()">Cancel</button><span class="mhdr-title">${d.mode==='add'?'New Message':'Edit Message'}</span><button class="btn-save" onclick="saveTmpl()">Save</button></div><div class="fsec"><div class="flabel">Title</div><input class="finput" placeholder='e.g. "Hey."' value="${esc(d.title)}" oninput="md.title=this.value;updPrev()"></div><div class="fsec"><div class="flabel">Subtitle <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></div><input class="finput" placeholder='e.g. "Sleep reminder"' value="${esc(d.subtitle)}" oninput="md.subtitle=this.value"></div><div class="fsec"><div class="flabel">Message body</div><textarea class="ftextarea" placeholder="Write the message your future self needs to hear..." oninput="md.body=this.value;updPrev()">${esc(d.body)}</textarea></div><div class="fsec"><div class="flabel">Preview</div><div class="notif-preview"><div class="notif-app">DISCIPLINE</div><div class="notif-title" id="pT">${esc(d.title)||'Your title'}</div><div class="notif-body" id="pB">${esc(d.body)||'Your message body...'}</div></div></div><div class="fsec"><div class="frow"><div><div style="font-size:15px;font-weight:600">Global message</div><div style="font-size:12px;color:var(--ink2);margin-top:2px">Used by every rule</div></div><label class="toggle"><input type="checkbox" ${d.isGlobal?'checked':''} onchange="md.isGlobal=this.checked;document.getElementById('sheet').innerHTML=tmplForm()"><span class="tslider"></span></label></div></div>${assign}<div style="height:32px"></div>`;
+}
+function tAssign(id,on){const i=md.assignedRuleIds.indexOf(id);if(on&&i<0)md.assignedRuleIds.push(id);if(!on&&i>=0)md.assignedRuleIds.splice(i,1)}
+function updPrev(){const t=document.getElementById('pT'),b=document.getElementById('pB');if(t)t.textContent=md.title||'Your title';if(b)b.textContent=md.body||'Your message body...'}
+function saveTmpl(){
+  if(!(md.title||'').trim()){alert('Enter a title.');return}if(!(md.body||'').trim()){alert('Enter a body.');return}
+  if(!md.isGlobal&&!md.assignedRuleIds.length){alert('Assign this message to at least one rule, or make it global.');return}
+  const t={id:md.mode==='edit'?md.id:uid(),title:md.title.trim(),subtitle:(md.subtitle||'').trim(),body:md.body.trim(),isGlobal:md.isGlobal,assignedRuleIds:md.isGlobal?[]:[...md.assignedRuleIds]};
+  if(md.mode==='add')state.templates.push(t);else{const i=state.templates.findIndex(x=>x.id===md.id);if(i>=0)state.templates[i]=t}
+  save();closeModal();
+}
+
+/* ── Settings actions ─────────────────────────────────────── */
+function adjCD(d){state.cooldown=Math.max(1,Math.min(120,state.cooldown+d));const e=document.getElementById('cdv');if(e)e.textContent=state.cooldown+' min';save()}
+function exportAll(){
+  const text=JSON.stringify({version:APP_VERSION,exportedAt:new Date().toISOString(),rules:state.rules,schedule:state.schedule,templates:state.templates,cooldown:state.cooldown},null,2);
+  if(navigator.share){navigator.share({title:'Discipline backup',text}).catch(()=>copyText(text));return}
+  copyText(text);
+}
+function copyText(text){if(navigator.clipboard)navigator.clipboard.writeText(text).then(()=>toast('Backup copied to clipboard.')).catch(()=>prompt('Copy this:',text));else prompt('Copy this:',text)}
+function openImport(){openModal(`<div class="mhdr"><button class="btn-cancel" onclick="closeModal()">Cancel</button><span class="mhdr-title">Import backup</span><button class="btn-save" onclick="doImport()">Import</button></div><div class="fsec"><div class="flabel">Paste JSON</div><textarea class="exp-area" id="ij" placeholder='{"rules":[...]} or [ ...rules ]'></textarea></div><div id="ierr" style="color:#c0392b;font-size:13px;padding:8px 20px;display:none">Invalid JSON — could not read this backup.</div><div style="height:32px"></div>`)}
+function doImport(){
+  try{
+    const raw=JSON.parse(document.getElementById('ij').value||'');
+    const src=Array.isArray(raw)?{rules:raw}:raw;
+    let n=0;
+    const merge=(list,incoming)=>{const ids=new Set(list.map(x=>x.id));for(const x of incoming||[]){if(x&&x.id&&!ids.has(x.id)){list.push(x);n++}}};
+    merge(state.rules,src.rules);merge(state.templates,src.templates);
+    if(src.schedule&&Array.isArray(src.schedule.blocks))merge(state.schedule.blocks,src.schedule.blocks);
+    if(Number.isFinite(src.cooldown))state.cooldown=src.cooldown;
+    save();closeModal();setTimeout(()=>toast(`Imported ${n} item(s).`),300);
+  }catch(_){const e=document.getElementById('ierr');if(e)e.style.display='block'}
+}
+
+/* ── CRUD ─────────────────────────────────────────────────── */
+function toggleRule(id){const r=state.rules.find(x=>x.id===id);if(r){r.isEnabled=!r.isEnabled;save();renderPage()}}
+function delRule(id){if(!confirm('Delete this rule?'))return;state.rules=state.rules.filter(x=>x.id!==id);state.templates.forEach(t=>{t.assignedRuleIds=(t.assignedRuleIds||[]).filter(x=>x!==id)});save();renderPage()}
+function delBlock(id){if(!confirm('Delete this block?'))return;state.schedule.blocks=state.schedule.blocks.filter(x=>x.id!==id);save();renderPage()}
+function delTmpl(id){if(!confirm('Delete this message?'))return;state.templates=state.templates.filter(x=>x.id!==id);save();renderPage()}
+
+/* ── Icons ────────────────────────────────────────────────── */
+function houseIco(){return`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>`}
+function shieldIco(){return`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2L4 6v6c0 5 3.5 9.3 8 11 4.5-1.7 8-6 8-11V6l-8-4z"/></svg>`}
+function calIco(){return`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>`}
+function msgIco(){return`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>`}
+function gearIco(){return`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>`}
+
+init();
+</script>
+</body>
+</html>
