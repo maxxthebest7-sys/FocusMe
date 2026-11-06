@@ -193,7 +193,7 @@ body{
 <div class="modal-overlay" id="overlay"><div class="modal-sheet" id="sheet"></div></div>
 <script>
 'use strict';
-const APP_VERSION='1.1.0'; // keep in sync with VERSION in sw.js
+const APP_VERSION='1.2.0'; // keep in sync with VERSION in sw.js
 const DAYS=['S','M','T','W','T','F','S'];
 const DAY_NAMES=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const ALL_DAYS=[0,1,2,3,4,5,6];
@@ -316,6 +316,12 @@ async function testNotif(){
 
 /* ── Streaks (daily check-in) ─────────────────────────────── */
 function needsCheckin(r){return r.isEnabled&&ls(`d.checkin.${r.id}`)!==dayKey()}
+// App-icon badge = number of rules still waiting for today's check-in (iOS 16.4+ Home Screen apps, Chrome, Edge).
+function updateBadge(){
+  if(!('setAppBadge' in navigator))return;
+  const n=state.rules.filter(needsCheckin).length;
+  (n?navigator.setAppBadge(n):navigator.clearAppBadge()).catch(()=>{});
+}
 function checkin(id,held){
   const r=state.rules.find(x=>x.id===id);if(!r)return;
   ls(`d.checkin.${id}`,dayKey());
@@ -343,7 +349,7 @@ function renderSetup(){
       hint='Then follow the steps that appear in Safari.';
     }else if(!sa){
       steps=step(1,'Tap the Share button',`It's the ${shareSvg()} icon in Safari's bottom toolbar.`)+
-            step(2,'Tap “Add to Home Screen”',`Scroll down the share sheet to find ${plusSvg()} <strong>Add to Home Screen</strong>, then tap <strong>Add</strong>.`)+
+            step(2,'Tap “Add to Home Screen”',`Scroll down the share sheet to find ${plusSvg()} <strong>Add to Home Screen</strong>, then tap <strong>Add</strong>. On iOS 26 or newer it becomes a full app automatically.`)+
             step(3,'Open Discipline from your Home Screen','Close Safari and tap the new black <strong>D</strong> icon. Setup finishes there automatically.');
       primary='';
       hint='Reminders only work from the Home Screen icon, not from a Safari tab.';
@@ -370,6 +376,7 @@ function finishSetup(){ls('d.setupDone','1');document.getElementById('setup').cl
 function reopenSetup(){try{localStorage.removeItem('d.setupDone')}catch(_){}renderSetup();if(!setupNeeded())alert('Setup is already complete on this device.')}
 async function doInstallPrompt(){if(!installPrompt)return;installPrompt.prompt();try{await installPrompt.userChoice}catch(_){}installPrompt=null;renderSetup()}
 function copyLink(){const url=location.href.split('?')[0];if(navigator.clipboard)navigator.clipboard.writeText(url).then(()=>alert('Link copied. Open Safari and paste it in the address bar.'));else prompt('Copy this link, then open it in Safari:',url)}
+function shareApp(){const url=location.href.split('?')[0];if(navigator.share){navigator.share({title:'Discipline',text:'Install Discipline — open this in Safari, then Share → Add to Home Screen.',url}).catch(()=>{});return}copyLink()}
 
 /* ── Update toast ─────────────────────────────────────────── */
 function toast(html,onAct,actLabel){
@@ -416,6 +423,7 @@ function renderPage(){
   if(clk){clearInterval(clk);clk=null}
   const pages={today:pgToday,rules:pgRules,schedule:pgSchedule,messages:pgMessages,settings:pgSettings};
   document.getElementById('content').innerHTML=(pages[tab]||pgToday)();
+  updateBadge();
   if(tab==='today')clk=setInterval(()=>{const e=document.getElementById('clk');if(e)e.textContent=nowStr()},15000);
 }
 function go(t){tab=t;render();document.getElementById('content').scrollTop=0}
@@ -476,7 +484,7 @@ function pgSettings(){
 <div><div class="sec-label">Reminders</div><div class="card">${rows}</div></div>
 <div><div class="sec-label">Cooldown</div><div class="card"><div class="crow" style="justify-content:space-between"><div><div class="crow-title">Global cooldown</div><div class="crow-sub">Minimum time between any two alerts</div></div><div class="stepper"><button class="sbtn" onclick="adjCD(-5)">−</button><span class="sval" id="cdv">${state.cooldown} min</span><button class="sbtn" onclick="adjCD(5)">+</button></div></div></div></div>
 <div><div class="sec-label">Backup</div><div class="card"><div class="crow tap" onclick="exportAll()"><div class="crow-info"><div class="crow-title">Export everything</div><div class="crow-sub">Rules, schedule and messages as JSON</div></div><span class="chev">↗</span></div><div class="cdiv"></div><div class="crow tap" onclick="openImport()"><div class="crow-info"><div class="crow-title">Import backup</div><div class="crow-sub">Paste JSON to restore or merge</div></div><span class="chev">↘</span></div></div></div>
-<div><div class="sec-label">App</div><div class="card"><div class="crow tap" onclick="checkForUpdates()"><div class="crow-info"><div class="crow-title">Check for updates</div><div class="crow-sub">Version ${APP_VERSION}${sa?' · installed':''}</div></div><span class="chev">›</span></div><div class="cdiv"></div><div class="crow tap" onclick="reopenSetup()"><div class="crow-info"><div class="crow-title">Setup guide</div><div class="crow-sub">Re-run the install steps</div></div><span class="chev">›</span></div><div class="cdiv"></div><div class="crow"><div class="crow-info"><div class="crow-title">Privacy</div><div class="crow-sub">All data stays on this device. No accounts, no cloud.</div></div></div></div></div>
+<div><div class="sec-label">App</div><div class="card"><div class="crow tap" onclick="checkForUpdates()"><div class="crow-info"><div class="crow-title">Check for updates</div><div class="crow-sub">Version ${APP_VERSION}${sa?' · installed':''}</div></div><span class="chev">›</span></div><div class="cdiv"></div><div class="crow tap" onclick="shareApp()"><div class="crow-info"><div class="crow-title">Send app link to a phone</div><div class="crow-sub">Share or copy the install link</div></div><span class="chev">↗</span></div><div class="cdiv"></div><div class="crow tap" onclick="reopenSetup()"><div class="crow-info"><div class="crow-title">Setup guide</div><div class="crow-sub">Re-run the install steps</div></div><span class="chev">›</span></div><div class="cdiv"></div><div class="crow"><div class="crow-info"><div class="crow-title">Privacy</div><div class="crow-sub">All data stays on this device. No accounts, no cloud.</div></div></div></div></div>
 <div class="infobox">App-launch and screen-time rules need the native iOS app with Apple's FamilyControls entitlement. Everything else works here.</div>
 </div>`;
 }

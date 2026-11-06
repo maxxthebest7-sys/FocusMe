@@ -1,6 +1,6 @@
 // Discipline service worker.
 // Bump VERSION whenever docs/ changes so installed apps pick up the update.
-const VERSION = '1.1.0';
+const VERSION = '1.2.0';
 const CACHE = `discipline-${VERSION}`;
 const SHELL = [
   './',

@@ -16,7 +16,7 @@ Scan to open it on your phone:
 
 That's it. No App Store, no developer account, no 7-day expiry. The app itself walks you through these steps the first time it opens, and tells you when an update is ready.
 
-**Publishing / updating:** every push that touches `docs/` runs the *Deploy Discipline PWA* workflow, which generates the icons and deploys to Pages. The first time, open the repo's **Settings → Pages** and set **Source** to **GitHub Actions** if the workflow didn't already enable it. When you change `docs/`, bump `VERSION` in `docs/sw.js` and `APP_VERSION` in `docs/index.html` so installed copies offer the update.
+**Publishing / updating:** every push that touches `docs/` runs the *Deploy Discipline PWA* workflow, which generates the icons and publishes the site to the `gh-pages` branch (GitHub serves that branch automatically on public repos; if the URL above ever 404s, open **Settings → Pages** and set **Source: Deploy from a branch → `gh-pages` / `(root)`** once). When you change `docs/`, bump `VERSION` in `docs/sw.js` and `APP_VERSION` in `docs/index.html` so installed copies offer the update.
 
 ---
 
